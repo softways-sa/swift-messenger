@@ -1,6 +1,7 @@
 package gr.softways.swift.messenger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -27,8 +28,38 @@ public class BotController {
   }
   
   @RequestMapping(value = "/v1/webhook", method = RequestMethod.POST)
-  public ResponseEntity receive(@RequestBody MessageCallback message) {
-	logJSON(message);
+  public ResponseEntity receive(@RequestBody MessageCallback messageCallback) {
+	logJSON(messageCallback);
+	
+	for (final MessageCallback.Entry message : messageCallback.entry) {
+	  for (final MessageCallback.Messaging messaging : message.messaging) {
+		// Only deal with messages, drop deliveries on the floor.
+		if (messaging.message != null && messaging.message.text != null) {
+		  
+		  if ("προσφορές".equalsIgnoreCase(messaging.message.text)) {
+			StructuredMessage structuredMessage = new StructuredMessage();
+		
+			structuredMessage.recipient = new StructuredMessage.Recipient();
+			structuredMessage.recipient.id = messaging.sender.id;
+			structuredMessage.message = new StructuredMessage.Message();
+			structuredMessage.message.attachment = new StructuredMessage.Attachment();
+			structuredMessage.message.attachment.payload = new StructuredMessage.Payload();
+
+			structuredMessage.message.attachment.payload.elements = new ArrayList();
+
+			StructuredMessage.Elements element = new StructuredMessage.Elements();
+			element.image_url = "http://shopdemo.softways.gr/prd_images/61091-1.jpg";
+			element.item_url = "http://shopdemo.softways.gr/site/product/RED-SAWTOOTH-65-10-BACKPACK?prdId=61091&extLang=";
+			structuredMessage.message.attachment.payload.elements.add(element);
+			
+			// send response
+			//this.outbox.send(response);
+		  }
+		  
+		}
+	  }
+	}
+	
 	return new ResponseEntity(HttpStatus.OK);
   }
   
